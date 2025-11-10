@@ -1,12 +1,16 @@
- <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<!-- ✅ Load libraries FIRST -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- ✅ Your Firebase + Dashboard code -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
 
-   const firebaseConfig = {
+    // ✅ FILL YOUR CONFIG HERE
+    const firebaseConfig = {
   apiKey: "AIzaSyA7teVnGoPPSpLdEMK0gqoNDzw6oCtS-yU",
   authDomain: "air-quality-monitor-5ee5a.firebaseapp.com",
   databaseURL: "https://air-quality-monitor-5ee5a-default-rtdb.firebaseio.com",
@@ -17,22 +21,24 @@
   measurementId: "G-RT3KDCB911"
 };
 
+    // ✅ Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
     let map = null;
     let markers = [];
 
+    // ✅ DON'T CALL INITMAP UNTIL DOM EXISTS
     function initMap() {
         map = L.map("map").setView([20.5937, 78.9629], 5);
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
     }
 
+    // ✅ Wait for HTML to load before touching #map
     $(document).ready(() => {
         initMap();
-        const dataRef = ref(db, 'airdata');
 
-        //  Realtime Listener (auto updates chart and map)
+        const dataRef = ref(db, 'airdata');
         onValue(dataRef, (snapshot) => {
             const raw = snapshot.val();
             if (!raw) return;
@@ -50,7 +56,7 @@
         const values = dataPoints.map(x => x.air_quality);
 
         if (chart) chart.destroy();
-        chart = new Chart($("#myChart"), {
+        chart = new Chart(document.getElementById("myChart"), {
             type: "line",
             data: {
                 labels: labels,
@@ -66,6 +72,7 @@
     }
 
     function updateMap(dataPoints) {
+        // Remove old markers
         markers.forEach(m => map.removeLayer(m));
         markers = [];
 
@@ -75,12 +82,9 @@
             markers.push(marker);
         });
 
-        // Jump to last reading
         if (dataPoints.length > 0) {
             let last = dataPoints[dataPoints.length - 1];
             map.setView([last.lat, last.lon], 14);
         }
     }
 </script>
-
-
