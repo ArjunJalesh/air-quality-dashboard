@@ -1,25 +1,86 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <title>Air Quality Dashboard</title>
+
+    <!-- ✅ CSS -->
     <style>
-        #map { height: 100vh; width: 100%; }
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            font-family: Arial, sans-serif;
+        }
+
+        /* ✅ Left & Right Panel */
+        #leftPanel, #rightPanel {
+            width: 50%;
+            height: 100vh;
+        }
+
+        #leftPanel {
+            border-right: 2px solid #ccc;
+            box-sizing: border-box;
+            padding: 10px;
+        }
+
+        h2 {
+            margin: 0;
+            padding-bottom: 5px;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        #chartContainer {
+            width: 100%;
+            height: calc(100vh - 40px);
+        }
+
+        #myChart {
+            width: 100%;
+            height: 100%;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
     </style>
 
+    <!-- ✅ JS Libraries -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- ✅ Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+</head>
+
+<body>
+
+    <!-- ✅ LEFT PANEL (Chart) -->
+    <div id="leftPanel">
+        <h2>Air Quality Chart</h2>
+        <div id="chartContainer">
+            <canvas id="myChart"></canvas>
+        </div>
+    </div>
+
+    <!-- ✅ RIGHT PANEL (Map) -->
+    <div id="rightPanel">
+        <div id="map"></div>
+    </div>
 
 
-<!-- ✅ Load libraries FIRST -->
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- ✅ Firebase + Dashboard Script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
 
-<!-- ✅ Your Firebase + Dashboard code -->
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
-
-    // ✅ FILL YOUR CONFIG HERE
-    const firebaseConfig = {
+        // ✅ FILL YOUR CONFIG HERE
+       const firebaseConfig = {
   apiKey: "AIzaSyA7teVnGoPPSpLdEMK0gqoNDzw6oCtS-yU",
   authDomain: "air-quality-monitor-5ee5a.firebaseapp.com",
   databaseURL: "https://air-quality-monitor-5ee5a-default-rtdb.firebaseio.com",
@@ -30,78 +91,75 @@
   measurementId: "G-RT3KDCB911"
 };
 
-    // ✅ Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-    let map = null;
-    let markers = [];
+        let map;
+        let markers = [];
+        let chart;
 
-    // ✅ DON'T CALL INITMAP UNTIL DOM EXISTS
-    function initMap() {
-        map = L.map("map").setView([20.5937, 78.9629], 5);
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
-    }
+        // ✅ Initialize Map AFTER DOM loads
+        $(document).ready(() => {
 
-    // ✅ Wait for HTML to load before touching #map
-    $(document).ready(() => {
-        initMap();
+            // ✅ Setup Leaflet Map
+            map = L.map('map').setView([20.5937, 78.9629], 5);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 18
+            }).addTo(map);
 
-        const dataRef = ref(db, 'airdata');
-        onValue(dataRef, (snapshot) => {
-            const raw = snapshot.val();
-            if (!raw) return;
+            // ✅ Fetch Firebase data live
+            const dataRef = ref(db, 'airdata');
+            onValue(dataRef, (snapshot) => {
+                const raw = snapshot.val();
+                if (!raw) return;
 
-            const dataPoints = Object.values(raw);
-            updateChart(dataPoints);
-            updateMap(dataPoints);
-        });
-    });
+                const dataPoints = Object.values(raw).filter(p => p.lat && p.lon);
 
-    let chart = null;
-
-    function updateChart(dataPoints) {
-        const labels = dataPoints.map(x => x.timestamp);
-        const values = dataPoints.map(x => x.air_quality);
-
-        if (chart) chart.destroy();
-        chart = new Chart(document.getElementById("myChart"), {
-            type: "line",
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: "Air Quality",
-                    data: values,
-                    borderColor: "blue",
-                    borderWidth: 2,
-                    fill: false
-                }]
-            }
-        });
-    }
-
-    function updateMap(dataPoints) {
-        // Remove old markers
-        markers.forEach(m => map.removeLayer(m));
-        markers = [];
-
-        dataPoints.forEach(p => {
-            const marker = L.marker([p.lat, p.lon]).addTo(map)
-                .bindPopup(`<b>AQ:</b> ${p.air_quality}<br><b>Time:</b> ${p.timestamp}`);
-            markers.push(marker);
+                updateChart(dataPoints);
+                updateMap(dataPoints);
+            });
         });
 
-        if (dataPoints.length > 0) {
-            let last = dataPoints[dataPoints.length - 1];
-            map.setView([last.lat, last.lon], 14);
+        // ✅ Update Chart
+        function updateChart(dataPoints) {
+            const labels = dataPoints.map(x => x.timestamp);
+            const values = dataPoints.map(x => x.air_quality);
+
+            if (chart) chart.destroy();
+            chart = new Chart(document.getElementById('myChart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: "Air Quality",
+                        data: values,
+                        borderColor: "blue",
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.3
+                    }]
+                }
+            });
         }
-    }
-</script>
-</head>
-<body>
 
-    <div id="map"></div>
+        // ✅ Update Map Markers
+        function updateMap(dataPoints) {
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
 
-   </body>
+            dataPoints.forEach(p => {
+                const marker = L.marker([p.lat, p.lon]).addTo(map)
+                    .bindPopup(`<b>AQ:</b> ${p.air_quality}<br><b>Time:</b> ${p.timestamp}`);
+
+                markers.push(marker);
+            });
+
+            if (markers.length > 0) {
+                map.setView(markers[markers.length - 1].getLatLng(), 14);
+            }
+        }
+    </script>
+
+</body>
 </html>
 
