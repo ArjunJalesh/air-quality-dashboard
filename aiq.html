@@ -184,7 +184,7 @@ var redIcon = new L.Icon({
     });
 
     if (markers.length > 0) {
-        map.setView(markers[markers.length - 1].getLatLng(), 14);
+      map.setView(markers[markers.length - 1].getLatLng(), map.getMaxZoom());
     }
 }
 
@@ -192,6 +192,7 @@ var redIcon = new L.Icon({
 
 </body>
 </html>
+
 
 
 
