@@ -200,11 +200,7 @@ var redIcon = new L.Icon({
     });
 
     // --- Draw Path Line ---
-    pathLine = L.polyline(latlngs, {
-        color: "blue",
-        weight: 3,
-        opacity: 0.6
-    }).addTo(map);
+  
 
     // --- Auto-Follow Latest Marker + Smooth Zoom ---
     if (markers.length > 0) {
@@ -222,6 +218,7 @@ var redIcon = new L.Icon({
 
 </body>
 </html>
+
 
 
 
