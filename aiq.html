@@ -205,7 +205,7 @@ var redIcon = new L.Icon({
     // --- Auto-Follow Latest Marker + Smooth Zoom ---
     if (markers.length > 0) {
         const last = markers[markers.length - 1].getLatLng();
-       map.flyTo(last, 16, {
+       map.flyTo(last, 18, {
         animate: true,
         duration: 1.2
         });
@@ -218,6 +218,7 @@ var redIcon = new L.Icon({
 
 </body>
 </html>
+
 
 
 
