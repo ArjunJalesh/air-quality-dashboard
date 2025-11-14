@@ -98,6 +98,29 @@
         let markers = [];
         let chart;
 
+var blueIcon = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+    shadowUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
+    iconSize: [25, 41], iconAnchor: [12, 41]
+});
+
+var yellowIcon = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png',
+    shadowUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
+    iconSize: [25, 41], iconAnchor: [12, 41]
+});
+
+var orangeIcon = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png',
+    shadowUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
+    iconSize: [25, 41], iconAnchor: [12, 41]
+});
+
+var redIcon = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+    shadowUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-shadow.png',
+    iconSize: [25, 41], iconAnchor: [12, 41]
+});
         // ✅ Initialize Map AFTER DOM loads
         $(document).ready(() => {
 
@@ -144,23 +167,31 @@
 
         // ✅ Update Map Markers
         function updateMap(dataPoints) {
-            markers.forEach(m => map.removeLayer(m));
-            markers = [];
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
 
-            dataPoints.forEach(p => {
-                const marker = L.marker([p.lat, p.lon]).addTo(map)
-                    .bindPopup(`<b>AQ:</b> ${p.air_quality}<br><b>Time:</b> ${p.timestamp}`);
+    dataPoints.forEach(p => {
 
-                markers.push(marker);
-            });
+        let icon = blueIcon;
+        if (p.air_quality > 1200) icon = redIcon;
+        else if (p.air_quality > 1000) icon = orangeIcon;
+        else if (p.air_quality > 900) icon = yellowIcon;
 
-            if (markers.length > 0) {
-                map.setView(markers[markers.length - 1].getLatLng(), 14);
-            }
-        }
+        const marker = L.marker([p.lat, p.lon], { icon: icon }).addTo(map)
+            .bindPopup(`<b>AQ:</b> ${p.air_quality}<br><b>Time:</b> ${p.timestamp}`);
+
+        markers.push(marker);
+    });
+
+    if (markers.length > 0) {
+        map.setView(markers[markers.length - 1].getLatLng(), 14);
+    }
+}
+
     </script>
 
 </body>
 </html>
+
 
 
